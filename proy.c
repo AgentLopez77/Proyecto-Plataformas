@@ -1,115 +1,64 @@
-//Librerias
+// Módulo del kernel para exponer datos reales al juego
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
-#include <linux/uaccess.h>
-#include <linux/kernel.h>
+#include <linux/seq_file.h>
+#include <linux/mm.h>
+#include <linux/sched/signal.h>
+#include <linux/jiffies.h>
+#include <linux/timekeeping.h>
 
-#define PROC_NAME "estado_sistema"
-#define MAX_BUF 128
+#define PROC_NAME "juego_kernel"
 
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Breyson Barrios");
+MODULE_DESCRIPTION("Módulo que expone datos del kernel para un juego interactivo");
 
-//Estado del sistema
-typedef struct {
-    int reputacion;
-    int usoCPU;
-    int usoRAM;
-    int integridadFS;
-    int seguridad;
-    int kernelPanic;
-} EstadoSistema;
+static int mostrar_info(struct seq_file *m, void *v) {
+    struct sysinfo i;
+    struct task_struct *task;
+    int procesos = 0;
 
-static EstadoSistema estado = {50, 80, 60, 100, 100, 0};
-static char proc_buffer[MAX_BUF];
+    // Memoria
+    si_meminfo(&i);
 
-static ssize_t proc_read(struct file *file, char __user *user_buffer,
-                         size_t count, loff_t *offset) {
-    char output[512];
-    int len;
-
-    if (*offset > 0)
-        return 0;
-
-        //Imprime los datos del sitema
-    len = snprintf(output, sizeof(output),
-        "== ESTADO DEL SISTEMA ==\n"
-        "Reputación: %d\n"
-        "Uso CPU simulado: %d%%\n"
-        "Uso RAM simulado: %d%%\n"
-        "Integridad FS: %d\n"
-        "Seguridad: %d\n"
-        "Kernel Panic: %s\n\n"
-        "Opciones para simular (escribe en /proc/%s):\n"
-        "1 - Matar proceso crítico\n"
-        "2 - Cambiar política de planificación\n"
-        "3 - No hacer nada\n",
-        estado.reputacion, estado.usoCPU, estado.usoRAM,
-        estado.integridadFS, estado.seguridad,
-        estado.kernelPanic ? "Sí" : "No",
-        PROC_NAME);
-
-    if (copy_to_user(user_buffer, output, len))
-        return -EFAULT;
-
-    *offset = len;
-    return len;
-}
-
-//casos posibles
-static ssize_t proc_write(struct file *file, const char __user *user_buffer,
-                          size_t count, loff_t *offset) {
-    int cmd;
-
-    if (count >= MAX_BUF)
-        return -EINVAL;
-
-    if (copy_from_user(proc_buffer, user_buffer, count))
-        return -EFAULT;
-
-    proc_buffer[count] = '\0';
-
-    if (kstrtoint(proc_buffer, 10, &cmd) != 0)
-        return -EINVAL;
-
-    switch (cmd) {
-        case 1:
-            printk(KERN_INFO "[estado_sistema] Proceso crítico muerto: Kernel Panic\n");
-            estado.kernelPanic = 1;
-            estado.reputacion -= 30;
-            break;
-        case 2:
-            printk(KERN_INFO "[estado_sistema] Política cambiada. CPU estabilizada\n");
-            estado.usoCPU -= 20;
-            if (estado.usoCPU < 0) estado.usoCPU = 0;
-            estado.reputacion += 10;
-            break;
-        case 3:
-            printk(KERN_INFO "[estado_sistema] No hiciste nada. El problema persiste\n");
-            estado.reputacion -= 5;
-            break;
-        default:
-            printk(KERN_INFO "[estado_sistema] Comando no válido: %d\n", cmd);
-            break;
+    // Contar procesos activos
+    for_each_process(task) {
+        procesos++;
     }
 
-    return count;
-}
+    // Tiempo de actividad en segundos
+    unsigned long uptime = jiffies / HZ;
 
-static const struct proc_ops proc_file_ops = {
-    .proc_read = proc_read,
-    .proc_write = proc_write,
-};
-
-static int __init estado_init(void) {
-    proc_create(PROC_NAME, 0666, NULL, &proc_file_ops);
-    printk(KERN_INFO "[estado_sistema] /proc/%s creado\n", PROC_NAME);
+    seq_printf(m, "== ESTADO DEL SISTEMA DEL KERNEL ==\n");
+    seq_printf(m, "Procesos activos: %d\n", procesos);
+    seq_printf(m, "RAM total: %lu KB\n", (i.totalram * i.mem_unit) / 1024);
+    seq_printf(m, "RAM libre: %lu KB\n", (i.freeram * i.mem_unit) / 1024);
+    seq_printf(m, "Tiempo de actividad: %lu segundos\n", uptime);
     return 0;
 }
 
-static void __exit estado_exit(void) {
-    remove_proc_entry(PROC_NAME, NULL);
-    printk(KERN_INFO "[estado_sistema] Módulo descargado\n");
+static int abrir_proc(struct inode *inode, struct file *file) {
+    return single_open(file, mostrar_info, NULL);
 }
 
-module_init(estado_init);
-module_exit(estado_exit);
+static const struct proc_ops operaciones = {
+    .proc_open = abrir_proc,
+    .proc_read = seq_read,
+    .proc_lseek = seq_lseek,
+    .proc_release = single_release,
+};
+
+static int __init iniciar_modulo(void) {
+    proc_create(PROC_NAME, 0, NULL, &operaciones);
+    printk(KERN_INFO "🧠 [juego_kernel] Módulo cargado correctamente\n");
+    return 0;
+}
+
+static void __exit salir_modulo(void) {
+    remove_proc_entry(PROC_NAME, NULL);
+    printk(KERN_INFO "🧠 [juego_kernel] Módulo descargado\n");
+}
+
+module_init(iniciar_modulo);
+module_exit(salir_modulo);
