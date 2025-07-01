@@ -14,6 +14,16 @@ El proyecto está compuesto por tres archivos principales:
 
 ---
 
+## Objetivos del Proyecto
+
+* **Diseñar e Implementar un Módulo del Kernel de Linux:** Crear un módulo del kernel que funcione correctamente y sea capaz de interactuar con un programa en el espacio de usuario. Específicamente, el módulo (`proy.c`) debe exponer datos reales del sistema, como procesos activos, uso de memoria RAM (total y libre) y tiempo de actividad del sistema (uptime), a través de una entrada en el sistema de archivos `/proc` (`/proc/juego_kernel`).
+
+* **Desarrollar una Aplicación en Espacio de Usuario Interconectada:** Implementar un programa en el espacio de usuario (`juego.sh`) que interactúe directamente con el módulo del kernel. Esta aplicación debe ser un simulador interactivo de gestión del kernel que utilice los datos expuestos por el módulo para influir en la lógica del juego y en las decisiones del usuario.
+
+* **Documentar el Proyecto Exhaustivamente:** Generar la documentación necesaria, incluyendo un informe técnico (como este) y la documentación del repositorio, que describa el proyecto, sus dependencias, los pasos de instalación y ejecución del código.
+
+* **Aplicar Buenas Prácticas de Desarrollo de Software:** Integrar buenas prácticas en el proceso de desarrollo, lo que incluye el uso de control de versiones con Git y la gestión del repositorio en GitHub, asegurando una adecuada organización y colaboración.
+
 ### 📁 Estructura del Proyecto
 
 ```
@@ -55,6 +65,20 @@ Este módulo utiliza diversas funciones del kernel y permite que el juego intera
 | `linux/timekeeping.h`  | Manejo del tiempo del sistema                                             |
 
 ---
+
+* **`linux/init.h`**: Contiene macros para la inicialización y salida de módulos del kernel, como `module_init()` y `module_exit()`, que definen las funciones que se ejecutan al cargar y descargar el módulo.
+* **`linux/module.h`**: Es fundamental para la creación de módulos del kernel. Define las macros para declarar metadatos del módulo, como la licencia (`MODULE_LICENSE`), el autor (`MODULE_AUTHOR`) y la descripción (`MODULE_DESCRIPTION`).
+* **`linux/proc_fs.h`**: Permite interactuar con el sistema de archivos `/proc`, habilitando la creación de entradas (`proc_create`) y la definición de operaciones (`proc_ops`) para que los programas de usuario puedan leer información del kernel.
+* **`linux/seq_file.h`**: Facilita la lectura de datos del kernel de forma secuencial y paginada a través de archivos virtuales como los de `/proc`, utilizando funciones como `single_open()` y `seq_printf()`.
+* **`linux/mm.h`**: Proporciona funciones y estructuras relacionadas con la gestión de memoria, como `si_meminfo()`, que permite obtener información sobre el uso de RAM (total y libre) del sistema.
+* **`linux/sched/signal.h`**: Contiene definiciones para la gestión de procesos en el kernel, incluyendo la macro `for_each_process` que se utiliza para iterar sobre la lista de tareas activas.
+* **`linux/jiffies.h`**: Define `jiffies`, una variable global que cuenta los "ticks" del temporizador del sistema, y `HZ`, que representa los jiffies por segundo. Es esencial para calcular el tiempo de actividad (uptime) del sistema.
+* **`linux/timekeeping.h`**: Proporciona funciones y estructuras más generales para la gestión del tiempo y la sincronización dentro del kernel.
+
+
+
+
+
 
 ### 🔹 2. `Makefile` - Automatización de Compilación
 
@@ -191,10 +215,26 @@ El juego concluye reiterando que todos los datos mostrados provienen directament
 ---
 
 
-## ✅ Conclusiones
+## ✅ Conclusiones del Proyecto
 
-Este proyecto es una excelente introducción a:
+* **Integración Exitosa Kernel-Userspace:** El proyecto ha demostrado una integración exitosa entre un módulo del kernel de Linux y un script en espacio de usuario. El módulo (`proy.c`) cumple su función de exponer datos del sistema, y el juego (`juego.sh`) los consume eficazmente para crear una experiencia interactiva.
 
-- Programación en C con interacción al kernel.
-- Automatización de compilación con `Makefile`.
-- Uso de Bash para construir experiencias interactivas en sistemas Linux.
+* **Funcionalidad y Relevancia Técnica:** La funcionalidad implementada de reportar métricas del sistema (procesos, RAM, uptime) a través de `/proc` es directamente relevante para la supervisión y gestión del sistema operativo, mostrando una aplicación práctica del desarrollo de módulos del kernel.
+
+* **Experiencia Educativa Interactiva:** El juego en Bash ofrece un enfoque interactivo y didáctico para comprender el impacto de las decisiones a nivel del kernel. La utilización de datos "reales" del sistema (proporcionados por el módulo) en el juego mejora la inmersión y la relevancia de las simulaciones.
+
+* **Adquisición de Habilidades de Desarrollo:** El proyecto requirió la habilidad de escribir código seguro y eficiente en C para el kernel, así como scripting en Bash para la lógica del juego. Además, subraya la importancia del trabajo en equipo y la documentación como aspectos críticos en proyectos de software.
+
+* **Cumplimiento de Requisitos del Curso:** El proyecto satisface los requisitos fundamentales de diseño, implementación y documentación de un módulo del kernel que interactúa con un programa de userspace, aplicando buenas prácticas de desarrollo y gestión de repositorios.
+
+## Referencias
+
+* **The Linux Kernel Module Programming Guide (LKMPG):** Guía fundamental para entender cómo escribir módulos para el kernel de Linux. Proporciona una base sólida sobre la estructura, funciones y mejores prácticas para el desarrollo de código a nivel de kernel.
+    * [https://sysprog21.github.io/lkmpg/](https://sysprog21.github.io/lkmpg/)
+
+* **Documentación Oficial del Kernel de Linux:** Recursos exhaustivos que cubren las APIs, estructuras de datos y funcionalidades internas del kernel, esenciales para el desarrollo de módulos y la comprensión de sus interacciones con el sistema.
+    * (Referencia genérica: Se recomendaría buscar la documentación específica de las versiones de kernel utilizadas o los subsistemas relevantes en [kernel.org](https://www.kernel.org/doc/html/latest/))
+
+* **Manual de Referencia de Bash:** Documentación detallada sobre el shell Bash, sus comandos, sintaxis y características, indispensable para la creación de scripts como `juego.sh` que interactúan con el sistema y procesan la salida de otros programas.
+    * (Referencia genérica: Se recomendaría buscar manuales oficiales de Bash o guías completas como la "Bash Reference Manual" disponible en línea, por ejemplo, en [gnu.org](https://www.gnu.org/software/bash/manual/bash.html))
+
