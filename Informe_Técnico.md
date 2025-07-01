@@ -82,6 +82,8 @@ Este módulo utiliza diversas funciones del kernel y permite que el juego intera
 
 ### 🔹 2. `Makefile` - Automatización de Compilación
 
+La implementacion de un makefile en el proyecto nace de la necesidad de la inclusion de un modulo de kernel para el correcto acceso y manejo de los datos de este, por lo que atraves del contenido del makefile y a partir del archivo proy.o se crean diversos archivos, principalmente el archivo .ko que es el encargado del modulo del kernel.
+
 Permite compilar fácilmente el módulo con `make`. Comando principal:
 
 ```bash
