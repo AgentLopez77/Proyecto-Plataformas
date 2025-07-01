@@ -2,9 +2,9 @@
 
 ## 📘 Descripción General del Proyecto
 
-Este proyecto consiste en un programa en lenguaje C que implementa un **juego interactivo de adivinanza numérica**, principalmente tomando como referencia los juegos basados en texto ó cocido  popularmente en inglés como “Text based adventure games” pupulares en los 90's en el que el usuario mediante opciones desplegadas e ingresadas puede ir avanzando. 
+Este proyecto consiste en un programa en lenguaje C que implementa un **juego interactivo de adivinanza numérica**, principalmente tomando como referencia los juegos basados en texto ó conocidos  popularmente en inglés como “Text based adventure games” pupulares en los 90's en el que el usuario mediante opciones desplegadas e ingresadas puede ir avanzando. 
 
-En este caso se adaptó de tal forma que el objetivo del juego es que el usuario adivine un número aleatorio generado por el programa, que se encuentra en el rango de **1 a 100** utilizando un módulo de kernel que extrae información del sistema para que forme parte de la compilación del juego.
+En éste caso este proyecto consiste primeramente en en un módulo del kernel de Linux escrito en C que crea una entrada personalizada en el sistema de archivos /proc, específicamente /proc/juego_kernel. Su propósito principal es exponer información en tiempo real del sistema operativo, como: El número total de procesos activos, la cantidad de memoria RAM total y libre y el tiempo de actividad (uptime) del sistema, datos que son utilizados para interactuar con el script de juego.sh que despliega distintos escenarios en los que el usuario puede tomar distintos caminos y evaluar sus conocimientos.
 
 El proyecto está compuesto por tres archivos principales:
 
