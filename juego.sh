@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Colores para estética
+# 🎨 Colores para interfaz del juego
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
@@ -11,31 +11,52 @@ reset=$(tput sgr0)
 reputacion=50
 nombre=""
 
-# Función para cargar datos del kernel extraídos desde el módulo
+# 📥 Cargar datos desde el módulo del kernel de forma robusta
 cargar_datos_kernel() {
     if [ ! -f /proc/juego_kernel ]; then
         echo "${red}ERROR: El módulo del kernel no está cargado o /proc/juego_kernel no existe.${reset}"
         exit 1
     fi
 
-    datos=$(cat /proc/juego_kernel)
-    kernel=$(echo "$datos" | grep "Versión del kernel" | cut -d ":" -f2 | xargs)
-    procesos=$(echo "$datos" | grep "Procesos activos" | cut -d ":" -f2 | xargs)
-    ram_total=$(echo "$datos" | grep "RAM total" | cut -d ":" -f2 | xargs)
-    ram_libre=$(echo "$datos" | grep "RAM libre" | cut -d ":" -f2 | xargs)
-    uptime=$(echo "$datos" | grep "Tiempo de actividad" | cut -d ":" -f2 | xargs)
+    # Reiniciar variables
+    kernel=""
+    procesos=""
+    ram_total=""
+    ram_libre=""
+    uptime=""
+    carga=""
+    pid=""
+    ppid=""
+    uid=""
+
+    # Leer línea por línea desde el archivo del módulo
+    while IFS=":" read -r clave valor; do
+        clave=$(echo "$clave" | xargs)
+        valor=$(echo "$valor" | xargs)
+        case "$clave" in
+            "Versión del kernel") kernel=$valor ;;
+            "Procesos activos") procesos=$valor ;;
+            "RAM total") ram_total=$valor ;;
+            "RAM libre") ram_libre=$valor ;;
+            "Tiempo de actividad (segundos)") uptime=$valor ;;
+            "Carga promedio (1 min)") carga=$valor ;;
+            "PID actual") pid=$valor ;;
+            "PID padre") ppid=$valor ;;
+            "UID del usuario actual") uid=$valor ;;
+        esac
+    done < /proc/juego_kernel
 }
 
-# Portada del juego
+# 🎬 Introducción al juego (no se modifica)
 intro() {
     clear
     echo -e "${green}"
-    echo "	       ██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗     "
-    echo "	       ██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║     "
-    echo "	       █████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║     "
-    echo "	       ██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ██║     "
-    echo "	       ██║  ██╗███████╗██║  ██║██║ ╚████║███████╗███████╗"
-    echo "	       ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝"
+    echo "            ██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗     "
+    echo "            ██║ ██╔╝██╔════╝██╔══██╗████╗  ██║██╔════╝██║     "
+    echo "            █████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║     "
+    echo "            ██╔═██╗ ██╔══╝  ██╔══██╗██║╚██╗██║██╔══╝  ██║     "
+    echo "            ██║  ██╗███████╗██║  ██║██║ ╚████║███████╗███████╗"
+    echo "            ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝"
     echo " █████╗ ██████╗ ██╗   ██╗███████╗███╗   ██╗████████╗██╗   ██╗██████╗ ███████╗"
     echo "██╔══██╗██╔══██╗██║   ██║██╔════╝████╗  ██║╚══██╔══╝██║   ██║██╔══██╗██╔════╝"
     echo "███████║██║  ██║██║   ██║█████╗  ██╔██╗ ██║   ██║   ██║   ██║██████╔╝█████╗  "
@@ -45,12 +66,12 @@ intro() {
     echo "      PROYECTO PLATAFORMAS - GRUPO 2 -  MÓDULO DEL KERNEL EN TIEMPO REAL"
     echo -e "${reset}"
     echo
-    echo "	        🖥️  ¡Bienvenido, explorador del sistema! 🚀"
+    echo "              🖥️  ¡Bienvenido, explorador del sistema! 🚀"
     echo 
     echo "En esta aventura de texto única, no solo tomas decisiones… también navegas por"
-    echo "el núcleo real de tu sistema operativo.A través de un módulo del kernel hecho "
+    echo "el núcleo real de tu sistema operativo. A través de un módulo del kernel hecho "
     echo "especialmente para este juego, accedes a datos reales 🧠: procesos activos, carga"
-    echo "del sistema, uso de memoria, etc.Cada escena que vives está conectada con el estado "
+    echo "del sistema, uso de memoria, etc. Cada escena que vives está conectada con el estado "
     echo "real del sistema."
     echo
     echo "⚠️ Elige con cuidado, analiza los datos y defiende la estabilidad del sistema 🛡️."
@@ -63,109 +84,120 @@ intro() {
     clear
 }
 
-# Función para mostrar el estado del sistema
+# 📊 Mostrar estado del sistema en cada escena
 mostrar_estado() {
     cargar_datos_kernel
-    echo
     echo -e "${blue}--- ESTADO DEL SISTEMA ---${reset}"
     echo "👤 Jugador: $nombre"
     echo "🏆 Reputación: $reputacion"
     echo "🧠 Kernel: $kernel"
     echo "🔧 Procesos activos: $procesos"
-    echo "📦 RAM Total: $ram_total kB"
-    echo "🟢 RAM Libre: $ram_libre kB"
-    echo "⏱ Tiempo encendido: $uptime segundos"
+    echo "📦 RAM Total: $ram_total "
+    echo "🟢 RAM Libre: $ram_libre "
+    echo "⚖ Carga promedio (1min): $carga"
+    echo "⏱ Uptime: $uptime segundos"
+    echo "🔢 PID actual: $pid | PID padre: $ppid"
+    echo "🧑 UID del usuario: $uid"
     echo "-----------------------------"
     echo
 }
 
-# Función para finalizar el juego
+# 🎯 Final del juego según reputación
 finalizar_juego() {
     echo
     echo -e "${yellow}📝 RESUMEN FINAL:${reset}"
     if [ $reputacion -ge 80 ]; then
-        echo -e "${green}🌟 ¡Has salvado el núcleo y mantenido el sistema estable! Eres un verdadero héroe del kernel.${reset}"
+        echo -e "${green}🌟 ¡Has salvado el núcleo y mantenido el sistema estable!${reset}"
     elif [ $reputacion -ge 50 ]; then
-        echo -e "${cyan}🔧 Tu gestión fue aceptable, pero hay espacio para mejorar la estabilidad del sistema.${reset}"
+        echo -e "${cyan}🔧 Tu gestión fue aceptable. Puedes mejorar aún más.${reset}"
     else
-        echo -e "${red}💥 Has perdido el control del sistema. El kernel ha colapsado por tus malas decisiones.${reset}"
+        echo -e "${red}💥 El sistema colapsó por malas decisiones.${reset}"
     fi
-    echo
     echo -e "${blue}¡Gracias por jugar, $nombre!${reset}"
     exit 0
 }
 
-# Escena genérica para tomar decisiones
-escena() {
+# 🧩 Motor para cada escena con 3 opciones
+escena3() {
     local numero="$1"
     local descripcion="$2"
-    local opcion1="$3"
-    local efecto1="$4"
-    local opcion2="$5"
-    local efecto2="$6"
+    local opcion1="$3" efecto1="$4"
+    local opcion2="$5" efecto2="$6"
+    local opcion3="$7" efecto3="$8"
 
     echo -e "${yellow}🔸 ESCENA $numero:${reset} $descripcion"
     mostrar_estado
     echo "1) $opcion1"
     echo "2) $opcion2"
-    read -p "¿Qué decides hacer? [1/2] ➤ " eleccion
-    if [ "$eleccion" == "1" ]; then
-        reputacion=$((reputacion + efecto1))
-        echo -e "${green}✔ Decisión aplicada. Reputación +${efecto1}.${reset}"
-    else
-        reputacion=$((reputacion + efecto2))
-        echo -e "${red}✘ Decisión aplicada. Reputación +${efecto2}.${reset}"
-    fi
+    echo "3) $opcion3"
+    read -p "¿Qué decides hacer? [1/2/3] ➤ " eleccion
+
+    case $eleccion in
+        1) reputacion=$((reputacion + efecto1));;
+        2) reputacion=$((reputacion + efecto2));;
+        3) reputacion=$((reputacion + efecto3));;
+        *) echo "Opción inválida."; sleep 1;;
+    esac
     sleep 2
     clear
 }
 
-# Escenas del juego
+# 🎮 Escenas del juego usando datos reales del kernel
 jugar() {
     intro
+cargar_datos_kernel
+    escena3 1 "El sistema reporta una carga promedio de $carga con $procesos procesos activos." \
+        "Reducís tareas pesadas y priorizás servicios críticos." 10 \
+        "Desactivás temporalmente el monitoreo del sistema." -5 \
+        "Aumentás procesos de respaldo sin ajustar prioridades." -10
 
-    escena 1 "Se detecta alta carga de procesos inesperada en el sistema." \
-        "Investigas y cierras procesos inactivos." 10 \
-        "Ignoras el problema." -10
+    escena3 2 "Solo quedan $ram_libre de RAM libre y un usuario va a abrir un navegador con múltiples pestañas." \
+        "Limitás recursos del navegador y liberás memoria." 10 \
+        "Ignorás el uso de RAM y dejás que se sature." -10 \
+        "Permitís que se ejecute pero limitás las pestañas activas." -5
 
-    escena 2 "El uso de RAM está creciendo peligrosamente." \
-        "Limpiar cachés de forma segura." 10 \
-        "Ignorar, esperas que el sistema lo maneje." -10
+    escena3 3 "El sistema lleva $uptime segundos encendido. Hay logs acumulados desde hace semanas." \
+        "Planificás limpieza y reinicio controlado." 10 \
+        "Ignorás la limpieza para no detener servicios." -5 \
+        "Reiniciás a la fuerza sin respaldo." -10
 
-    escena 3 "Detectas vulnerabilidades en el kernel actual." \
-        "Parcheas y recompilas el kernel." 15 \
-        "Dejas el kernel vulnerable por ahora." -15
+    escena3 4 "El proceso actual (PID $pid) fue lanzado por el padre $ppid. Sospechás comportamiento anómalo." \
+        "Auditás el proceso y validás con logs antes de actuar." 10 \
+        "Matás el proceso a ciegas sin investigar consecuencias." -10 \
+        "Esperás a que el proceso termine por sí solo." -5
 
-    escena 4 "Una actualización del sistema requiere reinicio inmediato." \
-        "Programas reinicio y notificas a usuarios." 10 \
-        "Reinicias sin aviso previo, causando caos." -20
+    escena3 5 "El kernel en uso es $kernel, y hay una nueva versión que soluciona bugs críticos." \
+        "Probás primero en entorno de prueba y actualizás." 10 \
+        "Actualizás directo sin verificar compatibilidad." -5 \
+        "Decidís mantener la versión actual por comodidad." -10
 
-    escena 5 "Usuarios reportan lentitud." \
-        "Revisas logs y ajustas políticas de I/O." 10 \
-        "Aumentas el swap sin revisar causas." -10
+    escena3 6 "El sistema tiene $procesos procesos y la carga subió a $carga. Algunos servicios están lentos." \
+        "Priorizás servicios clave y pausás tareas no críticas." 10 \
+        "Reiniciás servicios sin notificar usuarios." -5 \
+        "Aumentás hilos sin revisar consumo de CPU." -10
 
-    escena 6 "El número de procesos alcanza niveles inusuales." \
-        "Monitorea y ajusta límites de usuarios." 10 \
-        "No haces nada, esperas que bajen solos." -10
+    escena3 7 "Un usuario con UID $uid ejecuta múltiples scripts pesados simultáneamente." \
+        "Le asignás límites con cgroups y avisás al usuario." 10 \
+        "Bloqueás su cuenta sin explicación." -10 \
+        "Dejás que sus scripts sigan corriendo sin intervenir." -5
 
-    escena 7 "El tiempo de actividad muestra signos de inestabilidad por uptime prolongado." \
-        "Realizas mantenimiento proactivo." 10 \
-        "Ignoras el estado actual del sistema." -10
+    escena3 8 "Solo hay $ram_libre libres y otro servicio planea iniciar ahora." \
+        "Suspendés el inicio hasta liberar memoria." 10 \
+        "Forzás el arranque ignorando el riesgo de OOM." -10 \
+        "Asignás swap temporal antes de iniciar." -5
 
-    escena 8 "La RAM libre está llegando a cero." \
-        "Identificas y detienes procesos maliciosos." 10 \
-        "Reinicias el servicio más pesado sin diagnóstico." -10
+    escena3 9 "El sistema muestra una carga de $carga y uptime de $uptime segundos. Varios procesos no responden." \
+        "Ejecutás monitoreo activo y reconfigurás prioridades." 10 \
+        "Reiniciás el sistema sin guardar estado." -5 \
+        "Esperás más tiempo sin actuar." -10
 
-    escena 9 "Detectas intentos de intrusión SSH." \
-        "Refuerzas la seguridad y bloqueas IPs." 10 \
-        "Solo reinicias el servicio SSH." -10
-
-    escena 10 "El sistema ha sido estable, ¿finalizas la sesión?" \
-        "Documentas y cierras sesión limpiamente." 10 \
-        "Te vas sin cerrar sesión, dejándolo vulnerable." -10
+    escena3 10 "Con $procesos procesos activos, recibís una solicitud para ejecutar un análisis profundo del sistema." \
+        "Programás el análisis en horas de baja carga." 10 \
+        "Lo ejecutás ahora, causando lentitud." -5 \
+        "Lo rechazás sin justificar al usuario." -10
 
     finalizar_juego
 }
 
-# Iniciar juego
+# 🚀 Ejecutar el juego
 jugar
