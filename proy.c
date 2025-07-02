@@ -1,4 +1,4 @@
-// Módulo del kernel para el juego: expone datos reales del sistema
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -6,74 +6,78 @@
 #include <linux/seq_file.h>
 #include <linux/sched/signal.h>
 #include <linux/mm.h>
+#include <linux/sched.h>
 #include <linux/utsname.h>
-#include <linux/jiffies.h>
 #include <linux/time.h>
+#include <linux/fs.h>
+#include <linux/cred.h>
+#include <linux/uaccess.h>
+#include <linux/ktime.h>
 
-#define PROC_NAME "juego_kernel"
+#define NOMBRE_ARCHIVO "juego_kernel"
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Breyson");
-MODULE_DESCRIPTION("Modulo para extraer datos reales del kernel para un juego educativo");
-MODULE_VERSION("1.0");
+MODULE_AUTHOR("Grupo 2");
+MODULE_DESCRIPTION("Modulo que expone info real del sistema para juego interactivo");
 
-// Esta función se llama cada vez que alguien hace 'cat /proc/juego_kernel'
-static int escribir_proc(struct seq_file *archivo, void *v) {
+static int escribir_info(struct seq_file *archivo, void *v) {
     struct sysinfo i;
-    int procesos = 0;
     struct task_struct *tarea;
-    unsigned long uptime;
+    int procesos = 0;
 
-    // Obtener información de memoria del sistema
     si_meminfo(&i);
 
-    // Contar procesos en ejecución (TASK_RUNNING)
+    // Contar procesos activos
     for_each_process(tarea) {
-        if (task_is_running(tarea)) {
-            procesos++;
-        }
+        procesos++;
     }
 
-    // Calcular tiempo de actividad del sistema (en segundos)
-    uptime = jiffies / HZ;
+    // Uptime y carga
+    unsigned long uptime = ktime_get_boottime_seconds();
+    unsigned long load = i.loads[0] / (1 << SI_LOAD_SHIFT);  // conversión correcta
 
-    // Obtener versión del kernel usando init_uts_ns.name.release
-    const char *version = init_uts_ns.name.release;
+    // PID actual y padre
+    pid_t pid = current->pid;
+    pid_t ppid = current->real_parent->pid;
 
-    // Escribir toda la información en el archivo virtual
-    seq_printf(archivo, "Versión del kernel: %s\n", version);
-    seq_printf(archivo, "Tiempo de actividad: %lu segundos\n", uptime);
+    // UID del usuario actual
+    kuid_t uid = current_uid();
+
+    // Información para el juego
+    seq_printf(archivo, "Versión del kernel: %s\n", utsname()->release);
+    seq_printf(archivo, "Tiempo de actividad (segundos): %lu\n", uptime);
     seq_printf(archivo, "Procesos activos: %d\n", procesos);
-    seq_printf(archivo, "RAM total: %lu kB\n", (i.totalram * 4) / 1024);
-    seq_printf(archivo, "RAM libre: %lu kB\n", (i.freeram * 4) / 1024);
+    seq_printf(archivo, "RAM total: %lu\n", i.totalram * 4);
+    seq_printf(archivo, "RAM libre: %lu\n", i.freeram * 4);
+    seq_printf(archivo, "Carga promedio (1 min): %lu\n", load);
+    seq_printf(archivo, "PID actual: %d\n", pid);
+    seq_printf(archivo, "PID padre: %d\n", ppid);
+    seq_printf(archivo, "UID del usuario actual: %d\n", uid.val);
 
     return 0;
 }
 
-// Funciones auxiliares requeridas para /proc
-static int abrir_proc(struct inode *inode, struct file *file) {
-    return single_open(file, escribir_proc, NULL);
+static int abrir(struct inode *inode, struct file *file) {
+    return single_open(file, escribir_info, NULL);
 }
 
-static const struct proc_ops operaciones = {
-    .proc_open = abrir_proc,
+static struct proc_ops ops = {
+    .proc_open = abrir,
     .proc_read = seq_read,
     .proc_lseek = seq_lseek,
-    .proc_release = single_release,
+    .proc_release = single_release
 };
 
-// Función que se ejecuta al insertar el módulo con insmod
-static int __init iniciar_modulo(void) {
-    proc_create(PROC_NAME, 0, NULL, &operaciones);
-    printk(KERN_INFO "[juego_kernel] Módulo cargado. Archivo /proc/%s creado\n", PROC_NAME);
+static int __init iniciar(void) {
+    proc_create(NOMBRE_ARCHIVO, 0, NULL, &ops);
+    printk(KERN_INFO "Modulo cargado correctamente.\n");
     return 0;
 }
 
-// Función que se ejecuta al remover el módulo con rmmod
-static void __exit salir_modulo(void) {
-    remove_proc_entry(PROC_NAME, NULL);
-    printk(KERN_INFO "[juego_kernel] Módulo eliminado. Archivo /proc/%s removido\n", PROC_NAME);
+static void __exit salir(void) {
+    remove_proc_entry(NOMBRE_ARCHIVO, NULL);
+    printk(KERN_INFO "Modulo eliminado correctamente.\n");
 }
 
-module_init(iniciar_modulo);
-module_exit(salir_modulo);
+module_init(iniciar);
+module_exit(salir);
