@@ -53,11 +53,14 @@ Pasos de construcción:
 
 1.Se abre una nueva terminal en la maquina y se dirige a la carpeta en la que se guardaron los archivos previamente.
 
-2.Se ejecuta el comando "make", al ejecutarse,se deben de haber creado varios archivos nuevos en la misma carpeta (si no funciona se puede recurrir al comando "make clean", para borrar datos residuales y ejecutar el makefile).
 
-3.En el gestor de archivos se dirige al archivo juego.sh, se le da clic derecho, se dirige a propiedades y se activa la opción "ejecutable como un programa".
+2.En el gestor de archivos se dirige al archivo juego.sh, se le da clic derecho, se dirige a propiedades y se activa la opción "ejecutable como un programa".
 
-4. Si se han cumplido los pasos anteriores de manera satisfactoria, se puede proceder con la ejecución del codigo.
+3.Se ejecuta el comando "make", al ejecutarse,se deben de haber creado varios archivos nuevos en la misma carpeta (si no funciona se puede recurrir al comando "make clean", para borrar datos residuales y ejecutar el makefile).
+
+4.Se ejecuta el comando sudo insmod proy.ko, y se introduce la contraseña del usuario.
+
+5. Si se han cumplido los pasos anteriores de manera satisfactoria, se puede proceder con la ejecución del codigo.
 
 
 Pasos para la ejecución:
