@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# 🎨 Colores para interfaz del juego
+# Configuración de colores para la interfaz del juego
+# Usamos 'tput' para cambiar los colores del texto en consola y mejorar la presentación visual.
+
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
@@ -8,10 +10,16 @@ blue=$(tput setaf 4)
 cyan=$(tput setaf 6)
 reset=$(tput sgr0)
 
+#  Variables del juego
+# 'reputacion' es el puntaje del jugador. 'nombre' se solicita al iniciar el juego.
+
 reputacion=50
 nombre=""
 
-# 📥 Cargar datos desde el módulo del kernel de forma robusta
+# Función que carga los datos del sistema desde el módulo del kernel.
+# Lee el archivo /proc/juego_kernel línea por línea y extrae la información del sistema real.
+# Verifica que el archivo exista; si no, lanza un error.
+
 cargar_datos_kernel() {
     if [ ! -f /proc/juego_kernel ]; then
         echo "${red}ERROR: El módulo del kernel no está cargado o /proc/juego_kernel no existe.${reset}"
@@ -19,6 +27,7 @@ cargar_datos_kernel() {
     fi
 
     # Reiniciar variables
+    
     kernel=""
     procesos=""
     ram_total=""
@@ -29,7 +38,8 @@ cargar_datos_kernel() {
     ppid=""
     uid=""
 
-    # Leer línea por línea desde el archivo del módulo
+      # Lee el archivo del módulo y asigna valores a las variables
+      
     while IFS=":" read -r clave valor; do
         clave=$(echo "$clave" | xargs)
         valor=$(echo "$valor" | xargs)
@@ -47,7 +57,10 @@ cargar_datos_kernel() {
     done < /proc/juego_kernel
 }
 
-# 🎬 Introducción al juego (no se modifica)
+# Función de introducción al juego
+# Muestra arte ASCII y una breve historia para ambientar la experiencia del jugador.
+# También solicita el nombre del jugador.
+
 intro() {
     clear
     echo -e "${green}"
@@ -84,7 +97,9 @@ intro() {
     clear
 }
 
-# 📊 Mostrar estado del sistema en cada escena
+# Función para mostrar el estado actual del sistema
+# Muestra los datos cargados desde el módulo, como RAM, carga, procesos y PID.
+
 mostrar_estado() {
     cargar_datos_kernel
     echo -e "${blue}--- ESTADO DEL SISTEMA ---${reset}"
@@ -102,7 +117,9 @@ mostrar_estado() {
     echo
 }
 
-# 🎯 Final del juego según reputación
+# Función para mostrar el final del juego
+# Muestra un mensaje diferente según la reputación del jugador acumulada durante el juego.
+
 finalizar_juego() {
     echo
     echo -e "${yellow}📝 RESUMEN FINAL:${reset}"
@@ -117,7 +134,10 @@ finalizar_juego() {
     exit 0
 }
 
-# 🧩 Motor para cada escena con 3 opciones
+# Función para cada escena del juego
+# Muestra una situación, las 3 decisiones posibles y ajusta la reputación según la elección.
+# Esta función se reutiliza para cada escenario con diferentes parámetros.
+
 escena3() {
     local numero="$1"
     local descripcion="$2"
@@ -142,7 +162,9 @@ escena3() {
     clear
 }
 
-# 🎮 Escenas del juego usando datos reales del kernel
+# Función principal que ejecuta todo el juego
+# Ejecuta la introducción, llama a cada escena con datos reales y finaliza el juego.
+
 jugar() {
     intro
 cargar_datos_kernel
@@ -199,5 +221,5 @@ cargar_datos_kernel
     finalizar_juego
 }
 
-# 🚀 Ejecutar el juego
+# Llamada final que inicia el juego al ejecutar el script
 jugar
