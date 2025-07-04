@@ -19,22 +19,20 @@ Extensiones:
 
 Bibliotecas:
 
-
-- <linux/init.h>
-
-- <linux/module.h>
-
-- <linux/proc_fs.h>
-
-- <linux/uaccess.h>
-
-- <linux/kernel.h>
-
-- <linux/mm.h>
-
-- <linux/sched/signal.h>
-
-- <linux/time.h>
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/sched/signal.h>
+#include <linux/mm.h>
+#include <linux/sched.h>
+#include <linux/utsname.h>
+#include <linux/time.h>
+#include <linux/fs.h>
+#include <linux/cred.h>
+#include <linux/uaccess.h>
+#include <linux/ktime.h>
 
 
 
@@ -54,7 +52,7 @@ Pasos de construcción:
 1.Se abre una nueva terminal en la maquina y se dirige a la carpeta en la que se guardaron los archivos previamente.
 
 
-2.En el gestor de archivos se dirige al archivo juego.sh, se le da clic derecho, se dirige a propiedades y se activa la opción "ejecutable como un programa".
+2.Se ejecuta el comando chmod +x juego.sh para dar perimisos de ejecución al .sh(alternativamente se puede hacer esto desde las propiedades del archivo).
 
 3.Se ejecuta el comando "make", al ejecutarse,se deben de haber creado varios archivos nuevos en la misma carpeta (si no funciona se puede recurrir al comando "make clean", para borrar datos residuales y ejecutar el makefile).
 
